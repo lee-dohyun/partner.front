@@ -47,7 +47,7 @@ admin.front(직원용)와 구조는 같지만(BFF: 브라우저 → 이 앱의 r
 ## 함정
 
 - `@posselect/ui` 토큰에 없는 CSS 변수를 쓰면 조용히 죽는다(예: `--color-text-muted` 는 없다). `--color-neutral-*` 사용.
-- Dockerfile 은 `npm ci` + 마지막 스테이지 production. `next.config.ts` 를 production 스테이지에 복사해야 한다
+- Dockerfile 은 `npm ci` + 마지막 스테이지 production. 설정은 `next.config.mjs`(TS 금지 — prune 된 이미지에서 TypeScript 설치를 시도하다 OOM) 이고 production 스테이지에 복사해야 한다
   (store.front 에서 빠져 이미지 도메인 설정이 사라졌던 사고).
 
 ---
