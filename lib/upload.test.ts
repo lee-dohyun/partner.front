@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAX_UPLOAD_BYTES, checkUpload, objectKey, sniffImage } from "./upload";
+import { MAX_UPLOAD_BYTES, checkUpload, objectKey, publicUrl, sniffImage } from "./upload";
 
 const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0, 0, 0, 0, 0]);
 const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
@@ -33,6 +33,11 @@ describe("checkUpload", () => {
 
 describe("objectKey", () => {
   it("판매자별 prefix 아래 — MinIO 정책 범위와 일치해야 한다", () => {
-    expect(objectKey(7, "png", "abc")).toBe("cdn/products/partner/7/abc.png");
+    expect(objectKey(7, "png", "abc")).toBe("products/partner/7/abc.png");
+  });
+  it("공개 URL 은 image.posselect.com/cdn/<key> — cdn 버킷의 key 로 해석된다", () => {
+    expect(publicUrl(objectKey(7, "png", "abc"))).toBe(
+      "https://image.posselect.com/cdn/products/partner/7/abc.png",
+    );
   });
 });

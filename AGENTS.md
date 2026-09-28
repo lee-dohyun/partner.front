@@ -24,7 +24,7 @@ admin.front(직원용)와 구조는 같지만(BFF: 브라우저 → 이 앱의 r
 4. **`x-partner-verified-token` 헤더**는 middleware 가 항상 지우고 다시 쓴다. matcher 밖 route 에서는 이 헤더를
    믿으면 안 된다(클라이언트가 보낸 값일 수 있다).
 5. **업로드는 바이트 시그니처로 판정한다(`lib/upload.ts`).** Content-Type·확장자·파일명은 믿지 않는다. SVG 는
-   스크립트를 품을 수 있어 받지 않는다. MinIO 자격증명은 **partner 전용 계정**(shop-images/cdn/products/partner/*
+   스크립트를 품을 수 있어 받지 않는다. MinIO 자격증명은 **partner 전용 계정**(cdn/products/partner/*
    PutObject 만)이다 — admin.front 처럼 root 자격증명을 넣지 말 것.
 6. **partner realm 은 기본 역할에서 `manage-account` 를 뺐다**(gateway#278). Keycloak 22 는 계정 API 로 사용자가
    자기 속성(`seller_id` 포함)을 고칠 수 있다. realm 을 다시 만들거나 import 할 때 이 설정이 빠지면 판매자가

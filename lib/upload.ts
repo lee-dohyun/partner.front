@@ -44,7 +44,19 @@ export function checkUpload(size: number, head: Uint8Array): UploadCheck {
   return { ok: true, kind };
 }
 
-/** 판매자별 prefix 아래에만 쓴다 — MinIO 정책도 이 prefix 로만 PutObject 를 허용한다. */
+/**
+ * 판매자별 prefix 아래에만 쓴다 — MinIO 정책도 `cdn` 버킷의 이 prefix 로만 PutObject 를 허용한다.
+ *
+ * 버킷이 `cdn` 인 이유: 공개 URL `image.posselect.com/cdn/<key>` 는 cdn-alias → imgproxy 가
+ * **`cdn` 버킷**의 `<key>` 를 읽는다(IMGPROXY_BASE_URL=s3://cdn/). admin.front 를 따라 `shop-images`
+ * 버킷에 `cdn/...` 키로 쓰면 업로드는 성공하고 URL 은 404 다(2026-09-28 첫 e2e 에서 실측).
+ */
+export const UPLOAD_BUCKET = "cdn";
+
 export function objectKey(sellerId: number, ext: string, id: string): string {
-  return `cdn/products/partner/${sellerId}/${id}.${ext}`;
+  return `products/partner/${sellerId}/${id}.${ext}`;
+}
+
+export function publicUrl(key: string): string {
+  return `https://image.posselect.com/cdn/${key}`;
 }

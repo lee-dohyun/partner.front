@@ -8,7 +8,7 @@ app/login, app/api/login|logout      Keycloak partner realm ROPC → httpOnly �
 middleware.ts                        /partner/** · /api/partner/** 인증 게이트 + 조용한 토큰 갱신
 app/api/partner/[...path]            product.api /api/partner/** 중계(allow-list: lib/proxy-rules.ts)
 app/api/partner/categories           카테고리 목록(product.api 공개 경로)
-app/api/partner/upload               이미지 업로드 → MinIO shop-images/cdn/products/partner/<sellerId>/
+app/api/partner/upload               이미지 업로드 → MinIO cdn 버킷 products/partner/<sellerId>/ (→ image.posselect.com/cdn/...)
 app/partner/products                 내 상품 목록 / 등록 / 수정(components/ProductEditor.tsx)
 ```
 
