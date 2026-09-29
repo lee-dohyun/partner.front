@@ -12,13 +12,15 @@ import {
 } from "@/lib/labels";
 import { MAX_UPLOAD_BYTES } from "@/lib/upload";
 import OptionsEditor from "@/components/OptionsEditor";
+import IssueList from "@/components/IssueList";
+import PolicySection from "@/components/PolicySection";
+import { EMPTY_POLICY, POLICY_FIELDS, fromResponse, toRequest, validatePolicy, type PolicyForm, type PolicyResponse } from "@/lib/policy";
 import type {
   Category,
   CategoryRequirement,
   ProductDetail,
   ProductStatus,
   Submission,
-  SubmissionIssue,
 } from "@/lib/types";
 
 /** 기본 입력칸 이름 = product.api 검수 이슈의 field 값(SubmissionValidator). 여기 없는 field 는 폼 위에 모인다. */
@@ -64,21 +66,6 @@ async function readError(res: Response): Promise<string> {
   }
 }
 
-function IssueList({ issues }: { issues?: SubmissionIssue[] }) {
-  if (!issues?.length) return null;
-  return (
-    <ul className="mt-1 text-sm" style={{ listStyle: "none", padding: 0 }}>
-      {issues.map((i) => (
-        <li
-          key={i.id}
-          style={{ color: i.severity === "BLOCKING" ? "var(--color-danger)" : "var(--color-warning)" }}
-        >
-          {i.severity === "BLOCKING" ? "보완 필요" : "참고"} · {i.message}
-        </li>
-      ))}
-    </ul>
-  );
-}
 
 export default function ProductEditor({ productId: initialId }: { productId?: number }) {
   const [productId, setProductId] = useState<number | undefined>(initialId);
@@ -94,6 +81,8 @@ export default function ProductEditor({ productId: initialId }: { productId?: nu
 
   const [form, setForm] = useState<Form>(EMPTY_FORM);
   const [attributes, setAttributes] = useState<Record<string, string>>({});
+  // 판매 정책(product.api#79) — 상품과 별도 리소스(/policy)로 읽고 쓴다.
+  const [policy, setPolicy] = useState<PolicyForm>(EMPTY_POLICY);
 
   const [loading, setLoading] = useState(!!initialId);
   const [busy, setBusy] = useState<"" | "save" | "submit" | "upload">("");
@@ -113,10 +102,11 @@ export default function ProductEditor({ productId: initialId }: { productId?: nu
     if (!initialId) return;
     (async () => {
       try {
-        const [pRes, aRes, sRes] = await Promise.all([
+        const [pRes, aRes, sRes, polRes] = await Promise.all([
           fetch(`/api/partner/products/${initialId}`, { cache: "no-store" }),
           fetch(`/api/partner/products/${initialId}/attributes`, { cache: "no-store" }),
           fetch(`/api/partner/products/${initialId}/submission`, { cache: "no-store" }),
+          fetch(`/api/partner/products/${initialId}/policy`, { cache: "no-store" }),
         ]);
         if (!pRes.ok) throw new Error(await readError(pRes));
         const p: ProductDetail = await pRes.json();
@@ -140,6 +130,7 @@ export default function ProductEditor({ productId: initialId }: { productId?: nu
           const list: { code: string; value: string | null }[] = await aRes.json();
           setAttributes(Object.fromEntries(list.map((a) => [a.code, a.value ?? ""])));
         }
+        if (polRes.ok) setPolicy(fromResponse((await polRes.json()) as PolicyResponse));
         // 제출 이력이 없으면 404 다 — 정상.
         if (sRes.ok) setSubmission(await sRes.json());
       } catch (e) {
@@ -189,7 +180,7 @@ export default function ProductEditor({ productId: initialId }: { productId?: nu
 
   const editable = canEdit(productStatus, submission);
   const knownFields = useMemo(
-    () => new Set([...BASE_FIELDS, ...(requirement?.requiredAttributes.map((a) => a.code) ?? [])]),
+    () => new Set([...BASE_FIELDS, ...POLICY_FIELDS, ...(requirement?.requiredAttributes.map((a) => a.code) ?? [])]),
     [requirement],
   );
   const { byField, general } = useMemo(
@@ -208,7 +199,7 @@ export default function ProductEditor({ productId: initialId }: { productId?: nu
       return "정가는 비우거나 0 이상 숫자로 입력해 주세요.";
     }
     if (!/^\d+$/.test(form.stockQuantity)) return "재고는 0 이상 정수로 입력해 주세요.";
-    return null;
+    return validatePolicy(policy);
   };
 
   /** 상품(전체 교체) → 고시 항목 순으로 저장하고 상품 id 를 돌려준다. */
@@ -222,7 +213,8 @@ export default function ProductEditor({ productId: initialId }: { productId?: nu
       // PUT 은 전체 교체라 빠진 필드는 "비움"이다 — 이미지 목록은 빈 배열이라도 항상 보낸다.
       imageUrls: form.imageUrls,
       listPrice: form.listPrice === "" ? null : Number(form.listPrice),
-      freeShipping: form.freeShipping,
+      // 무료배송 표시는 판매 정책의 배송비에서 파생한다(서버도 정책이 있으면 정책을 따른다).
+      freeShipping: policy.shippingFeeType === "FREE",
       brand: form.brand.trim() || null,
     };
     const res = await fetch(productId ? `/api/partner/products/${productId}` : "/api/partner/products", {
@@ -250,6 +242,13 @@ export default function ProductEditor({ productId: initialId }: { productId?: nu
       }),
     });
     if (!attrRes.ok) throw new Error(`고시 항목 저장 실패: ${await readError(attrRes)}`);
+
+    const polRes = await fetch(`/api/partner/products/${id}/policy`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(toRequest(policy)),
+    });
+    if (!polRes.ok) throw new Error(`판매 정책 저장 실패: ${await readError(polRes)}`);
     return id;
   };
 
@@ -451,15 +450,7 @@ export default function ProductEditor({ productId: initialId }: { productId?: nu
         {multiSku && (
           <p className="text-sm text-muted">옵션이 있는 상품은 판매가·재고를 아래 옵션·SKU 표에서 조합별로 고칩니다.</p>
         )}
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={form.freeShipping}
-            disabled={disabled}
-            onChange={(e) => set("freeShipping", e.target.checked)}
-          />
-          무료배송
-        </label>
+        {/* 무료배송 여부는 아래 "판매 정책 > 배송비"에서 정한다(product.api#79). */}
 
         {/* 4) 이미지 */}
         <Field label="상품 이미지" required helpText="JPG·PNG·WEBP, 5MB 이하. 첫 번째 이미지가 대표 이미지입니다." error={!!f("imageUrls")}>
@@ -518,6 +509,14 @@ export default function ProductEditor({ productId: initialId }: { productId?: nu
             ))}
           </fieldset>
         )}
+
+        {/* 5-1) 판매 정책(product.api#79) */}
+        <PolicySection
+          policy={policy}
+          set={(key, value) => setPolicy((p) => ({ ...p, [key]: value }))}
+          disabled={disabled}
+          issuesFor={f}
+        />
 
         {/* 6) 옵션·SKU — 상품을 한 번 저장해야(id 가 생겨야) 구성할 수 있다 */}
         {detail ? (
