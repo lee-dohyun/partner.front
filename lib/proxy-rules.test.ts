@@ -13,6 +13,8 @@ describe("BFF 중계 allow-list", () => {
     ["POST", "products/12/submission"],
     ["GET", "categories/9105/requirement"],
     ["PUT", "products/12/options"],
+    ["GET", "products/12/policy"],
+    ["PUT", "products/12/policy"],
     ["PUT", "products/12/variants/34"],
   ])("허용: %s %s", (m, p) => expect(isAllowed(m, p)).toBe(true));
 
@@ -27,6 +29,7 @@ describe("BFF 중계 allow-list", () => {
     ["GET", ""],
     ["POST", "categories/1/requirement"],
     ["GET", "products/12/options"],
+    ["POST", "products/12/policy"],
     ["DELETE", "products/12/variants/34"],
     ["PUT", "products/12/variants/abc"],
   ])("거부: %s %s", (m, p) => expect(isAllowed(m, p)).toBe(false));

@@ -16,6 +16,9 @@ const RULES: ReadonlyArray<readonly [string, RegExp]> = [
   ["GET", new RegExp(`^products/${ID}/submission$`)],
   ["POST", new RegExp(`^products/${ID}/submission$`)],
   ["GET", new RegExp(`^categories/${ID}/requirement$`)],
+  // 판매 정책(product.api#79)
+  ["GET", new RegExp(`^products/${ID}/policy$`)],
+  ["PUT", new RegExp(`^products/${ID}/policy$`)],
   // 옵션 구성·SKU 수정(partner.front#11, product.api#80)
   ["PUT", new RegExp(`^products/${ID}/options$`)],
   ["PUT", new RegExp(`^products/${ID}/variants/${ID}$`)],
