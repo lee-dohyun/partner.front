@@ -16,6 +16,9 @@ const RULES: ReadonlyArray<readonly [string, RegExp]> = [
   ["GET", new RegExp(`^products/${ID}/submission$`)],
   ["POST", new RegExp(`^products/${ID}/submission$`)],
   ["GET", new RegExp(`^categories/${ID}/requirement$`)],
+  // 옵션 구성·SKU 수정(partner.front#11, product.api#80)
+  ["PUT", new RegExp(`^products/${ID}/options$`)],
+  ["PUT", new RegExp(`^products/${ID}/variants/${ID}$`)],
 ];
 
 export function isAllowed(method: string, path: string): boolean {
