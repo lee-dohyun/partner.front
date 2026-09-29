@@ -11,6 +11,7 @@ import {
   isValidating,
 } from "@/lib/labels";
 import { MAX_UPLOAD_BYTES } from "@/lib/upload";
+import OptionsEditor from "@/components/OptionsEditor";
 import type {
   Category,
   CategoryRequirement,
@@ -82,6 +83,8 @@ function IssueList({ issues }: { issues?: SubmissionIssue[] }) {
 export default function ProductEditor({ productId: initialId }: { productId?: number }) {
   const [productId, setProductId] = useState<number | undefined>(initialId);
   const [productStatus, setProductStatus] = useState<ProductStatus | null>(null);
+  // 옵션·SKU 표(partner.front#11)용. 옵션 구성·SKU 저장 후 reloadDetail 로 다시 읽는다.
+  const [detail, setDetail] = useState<ProductDetail | null>(null);
   const [submission, setSubmission] = useState<Submission | null>(null);
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -118,6 +121,7 @@ export default function ProductEditor({ productId: initialId }: { productId?: nu
         if (!pRes.ok) throw new Error(await readError(pRes));
         const p: ProductDetail = await pRes.json();
         setProductStatus(p.status);
+        setDetail(p);
         setForm({
           name: p.name ?? "",
           brand: p.brand ?? "",
@@ -145,6 +149,18 @@ export default function ProductEditor({ productId: initialId }: { productId?: nu
       }
     })();
   }, [initialId]);
+
+  // 옵션 구성·SKU 저장 뒤: 상품을 다시 읽어 SKU 표와 대표 가격·재고(SKU 에서 계산된 값)를 맞춘다.
+  // 입력 중인 나머지 폼 값은 건드리지 않는다.
+  const reloadDetail = useCallback(async () => {
+    if (!productId) return;
+    const res = await fetch(`/api/partner/products/${productId}`, { cache: "no-store" });
+    if (!res.ok) return setMessage({ kind: "error", text: `상품을 다시 불러오지 못했습니다. ${await readError(res)}` });
+    const p: ProductDetail = await res.json();
+    setDetail(p);
+    setForm((f) => ({ ...f, price: String(p.price), stockQuantity: String(p.stockQuantity) }));
+    setMessage({ kind: "ok", text: "옵션·SKU 를 저장했습니다." });
+  }, [productId]);
 
   // 카테고리가 정해지면 그 카테고리의 고시 항목을 가져온다.
   useEffect(() => {
@@ -218,6 +234,7 @@ export default function ProductEditor({ productId: initialId }: { productId?: nu
     const saved: ProductDetail = await res.json();
     const id = saved.id;
     setProductStatus(saved.status);
+    setDetail(saved);
     if (!productId) {
       setProductId(id);
       // 새로고침해도 같은 상품을 보도록 주소만 바꾼다(재마운트하면 입력 중 상태를 잃는다).
@@ -311,6 +328,8 @@ export default function ProductEditor({ productId: initialId }: { productId?: nu
   if (loading) return <main className="max-w-3xl mx-auto p-6">불러오는 중...</main>;
 
   const disabled = !editable || busy !== "";
+  // 옵션이 있으면 대표 가격·재고는 SKU 들에서 계산된 값이다 — 여기서 고쳐도 서버가 무시한다(product.api#47).
+  const multiSku = (detail?.options.length ?? 0) > 0;
   const f = (field: string) => byField.get(field);
 
   return (
@@ -417,7 +436,7 @@ export default function ProductEditor({ productId: initialId }: { productId?: nu
         </Field>
         <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))" }}>
           <Field label="판매가(원)" required error={!!f("price")}>
-            <Input inputMode="numeric" value={form.price} disabled={disabled} onChange={(e) => set("price", e.target.value)} />
+            <Input inputMode="numeric" value={form.price} disabled={disabled || multiSku} onChange={(e) => set("price", e.target.value)} />
             <IssueList issues={f("price")} />
           </Field>
           <Field label="정가(원)" helpText="할인 전 가격. 없으면 비워 두세요.">
@@ -425,10 +444,13 @@ export default function ProductEditor({ productId: initialId }: { productId?: nu
             <IssueList issues={f("listPrice")} />
           </Field>
           <Field label="재고" required error={!!f("stockQuantity")}>
-            <Input inputMode="numeric" value={form.stockQuantity} disabled={disabled} onChange={(e) => set("stockQuantity", e.target.value)} />
+            <Input inputMode="numeric" value={form.stockQuantity} disabled={disabled || multiSku} onChange={(e) => set("stockQuantity", e.target.value)} />
             <IssueList issues={f("stockQuantity")} />
           </Field>
         </div>
+        {multiSku && (
+          <p className="text-sm text-muted">옵션이 있는 상품은 판매가·재고를 아래 옵션·SKU 표에서 조합별로 고칩니다.</p>
+        )}
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
@@ -495,6 +517,13 @@ export default function ProductEditor({ productId: initialId }: { productId?: nu
               </Field>
             ))}
           </fieldset>
+        )}
+
+        {/* 6) 옵션·SKU — 상품을 한 번 저장해야(id 가 생겨야) 구성할 수 있다 */}
+        {detail ? (
+          <OptionsEditor product={detail} editable={editable} readError={readError} onChanged={reloadDetail} />
+        ) : (
+          <p className="text-sm text-muted">옵션(색상·사이즈 등)은 임시저장한 뒤 설정할 수 있습니다.</p>
         )}
 
         {message && (

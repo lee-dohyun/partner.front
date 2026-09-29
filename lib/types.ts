@@ -38,6 +38,19 @@ export type ProductDetail = {
   freeShipping: boolean;
   brand: string | null;
   status: ProductStatus;
+  options: ProductOption[];
+  variants: ProductVariant[];
+};
+
+export type ProductOption = { id: number; name: string; values: { id: number; value: string }[] };
+
+export type ProductVariant = {
+  id: number;
+  sku: string | null;
+  price: number;
+  active: boolean;
+  stockQuantity: number;
+  optionValues: { optionId: number; optionName: string; valueId: number; value: string }[];
 };
 
 export type SubmissionIssue = {
