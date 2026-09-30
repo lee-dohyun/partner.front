@@ -12,7 +12,7 @@ admin.front(직원용)와 구조는 같지만(BFF: 브라우저 → 이 앱의 r
 
 ## 보안 경계 — 틀리면 판매자끼리 데이터가 섞이거나 외부에 열린다
 
-1. **`middleware.ts` 의 matcher(`/partner/**`, `/api/partner/**`) 밖은 무인증이다.** partner.posselect.com 은
+1. **`proxy.ts` 의 matcher(`/partner/**`, `/api/partner/**`) 밖은 무인증이다.** partner.posselect.com 은
    게이트웨이 protected-hosts 에 없어서 게이트웨이는 아무것도 검사하지 않는다. 새 화면·API 는 반드시 이 두
    prefix 아래에 둘 것.
 2. **판매자 범위는 product.api 가 강제한다.** 이 앱은 토큰을 그대로 전달할 뿐이고, product.api 가 partner realm
@@ -21,7 +21,7 @@ admin.front(직원용)와 구조는 같지만(BFF: 브라우저 → 이 앱의 r
    토큰의 sellerId 를 쓴다.)
 3. **중계는 allow-list 다(`lib/proxy-rules.ts`).** product.api 에 `/api/partner/**` 경로가 새로 생겨도 여기에
    추가하기 전까지는 404 다. 편하다고 catch-all 을 무조건 통과로 바꾸지 말 것.
-4. **`x-partner-verified-token` 헤더**는 middleware 가 항상 지우고 다시 쓴다. matcher 밖 route 에서는 이 헤더를
+4. **`x-partner-verified-token` 헤더**는 proxy 가 항상 지우고 다시 쓴다. matcher 밖 route 에서는 이 헤더를
    믿으면 안 된다(클라이언트가 보낸 값일 수 있다).
 5. **업로드는 바이트 시그니처로 판정한다(`lib/upload.ts`).** Content-Type·확장자·파일명은 믿지 않는다. SVG 는
    스크립트를 품을 수 있어 받지 않는다. MinIO 자격증명은 **partner 전용 계정**(cdn/products/partner/*
@@ -32,7 +32,7 @@ admin.front(직원용)와 구조는 같지만(BFF: 브라우저 → 이 앱의 r
 
 ## 세션
 
-- 액세스 토큰 5분, refresh 는 realm SSO idle(30분). middleware 가 만료 시 refresh 로 조용히 갱신한다.
+- 액세스 토큰 5분, refresh 는 realm SSO idle(30분). proxy 가 만료 시 refresh 로 조용히 갱신한다.
   refresh 를 없애면 폼 작성 중 5분 만에 로그인 화면으로 튕긴다.
 - 로그아웃은 **POST** + Keycloak 세션 종료. GET 링크로 바꾸면 외부 페이지 `<img>` 한 줄로 로그아웃시킬 수 있다.
 

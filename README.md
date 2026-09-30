@@ -5,7 +5,7 @@ Next.js App Router, admin.front 와 같은 BFF 구조. 부모 이슈: lee-dohyun
 
 ```
 app/login, app/api/login|logout      Keycloak partner realm ROPC → httpOnly 쿠키(액세스+refresh)
-middleware.ts                        /partner/** · /api/partner/** 인증 게이트 + 조용한 토큰 갱신
+proxy.ts                        /partner/** · /api/partner/** 인증 게이트 + 조용한 토큰 갱신
 app/api/partner/[...path]            product.api /api/partner/** 중계(allow-list: lib/proxy-rules.ts)
 app/api/partner/categories           카테고리 목록(product.api 공개 경로)
 app/api/partner/upload               이미지 업로드 → MinIO cdn 버킷 products/partner/<sellerId>/ (→ image.posselect.com/cdn/...)

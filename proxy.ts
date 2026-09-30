@@ -17,7 +17,7 @@ export const config = {
   matcher: ["/partner/:path*", "/api/partner/:path*"],
 };
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const isApi = pathname.startsWith("/api/");
 

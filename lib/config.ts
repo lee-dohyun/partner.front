@@ -14,8 +14,8 @@ export const ACCESS_COOKIE = "PARTNER_ACCESS_TOKEN";
 export const REFRESH_COOKIE = "PARTNER_REFRESH_TOKEN";
 
 /**
- * middleware 가 **검증을 마친** 액세스 토큰을 다운스트림(route handler·서버 컴포넌트)에 넘기는 헤더.
- * 클라이언트가 같은 이름으로 보내도 middleware 가 항상 지우고 다시 쓴다 — 그래서 matcher 밖에서는
+ * proxy 가 **검증을 마친** 액세스 토큰을 다운스트림(route handler·서버 컴포넌트)에 넘기는 헤더.
+ * 클라이언트가 같은 이름으로 보내도 proxy 가 항상 지우고 다시 쓴다 — 그래서 matcher 밖에서는
  * 이 헤더를 믿으면 안 된다.
  */
 export const VERIFIED_TOKEN_HEADER = "x-partner-verified-token";
