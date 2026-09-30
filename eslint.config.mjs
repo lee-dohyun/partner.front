@@ -39,12 +39,6 @@ const eslintConfig = [
   ...nextVitals,
   ...nextTs,
   {
-    // eslint-config-next 16 이 새로 켠 react-hooks v7 규칙. 업그레이드 시점에 기존 코드 1건
-    // (ProductEditor 의 카테고리 해제 시 setRequirement(null))이 걸렸다. 업그레이드 PR 에서
-    // 컴포넌트 로직을 바꾸지 않으려 warn 으로 둔다 — 신호는 남기고 별도 이슈로 고친다.
-    rules: { "react-hooks/set-state-in-effect": "warn" },
-  },
-  {
     // 소스 코드만 대상. 설정 파일(*.mjs/*.config.ts)까지 걸면 노이즈만 는다.
     files: ["app/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}"],
     plugins: sonarjs.configs.recommended.plugins,

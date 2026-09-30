@@ -77,7 +77,9 @@ export default function ProductEditor({ productId: initialId }: { productId?: nu
   const [categories, setCategories] = useState<Category[]>([]);
   const [parentId, setParentId] = useState<number | null>(null);
   const [categoryId, setCategoryId] = useState<number | null>(null);
-  const [requirement, setRequirement] = useState<CategoryRequirement | null>(null);
+  // 마지막으로 받아 온 고시 항목. 카테고리를 해제하면 아래 `requirement` 가 파생으로 null 이 된다 —
+  // effect 안에서 동기 setState 로 비우지 않는다(react-hooks/set-state-in-effect, gateway#286).
+  const [fetchedRequirement, setFetchedRequirement] = useState<CategoryRequirement | null>(null);
 
   const [form, setForm] = useState<Form>(EMPTY_FORM);
   const [attributes, setAttributes] = useState<Record<string, string>>({});
@@ -155,15 +157,13 @@ export default function ProductEditor({ productId: initialId }: { productId?: nu
 
   // 카테고리가 정해지면 그 카테고리의 고시 항목을 가져온다.
   useEffect(() => {
-    if (!categoryId) {
-      setRequirement(null);
-      return;
-    }
+    if (!categoryId) return;
     fetch(`/api/partner/categories/${categoryId}/requirement`, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
-      .then(setRequirement)
-      .catch(() => setRequirement(null));
+      .then(setFetchedRequirement)
+      .catch(() => setFetchedRequirement(null));
   }, [categoryId]);
+  const requirement = categoryId ? fetchedRequirement : null;
 
   // ── 파생 값 ──────────────────────────────────────────────────────────────
   const parents = useMemo(
