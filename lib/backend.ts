@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PRODUCT_API_URL, VERIFIED_TOKEN_HEADER } from "./config";
 
-/** middleware 가 검증해 넘긴 토큰. matcher 밖에서 불리면 null 이다(그땐 401 로 처리할 것). */
+/** proxy 가 검증해 넘긴 토큰. matcher 밖에서 불리면 null 이다(그땐 401 로 처리할 것). */
 export function verifiedToken(request: NextRequest): string | null {
   return request.headers.get(VERIFIED_TOKEN_HEADER);
 }

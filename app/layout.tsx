@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const jar = await cookies();
-  // 메뉴 노출용 힌트일 뿐이다. 실제 접근 통제는 middleware 가 한다.
+  // 메뉴 노출용 힌트일 뿐이다. 실제 접근 통제는 proxy 가 한다.
   const signedIn = jar.has(ACCESS_COOKIE) || jar.has(REFRESH_COOKIE);
 
   return (
