@@ -31,7 +31,7 @@ jobs:
       # target 을 명시한다 — admin.front 는 이게 빠져 프로덕션에 next dev 가 떠 있었다(2026-07-31).
       # 이 저장소 Dockerfile 은 마지막 스테이지가 production 이라 이중 방어다.
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
