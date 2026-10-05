@@ -62,7 +62,7 @@ jobs:
       # 다른 프론트와 같이 Code Scanning 에도 올린다 - 없으면 이 저장소만 경고 건수를 볼 곳이 없다(gateway#247).
       - name: Upload Trivy scan results to GitHub Code Scanning
         if: always() && github.event_name == 'push'
-        uses: github/codeql-action/upload-sarif@v4.37.8
+        uses: github/codeql-action/upload-sarif@v4.38.2
         with:
           sarif_file: "trivy-results.sarif"
 
